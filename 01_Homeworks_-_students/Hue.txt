@@ -1,0 +1,125 @@
+void MainFrame::on_buttonSepiatone_clicked()
+{
+
+    KImageColor     icMain;
+    if(_q_pFormFocused != 0 && _q_pFormFocused->ImageColor().Address()&& _q_pFormFocused->ID() == "OPEN" )
+         icMain = _q_pFormFocused -> ImageColor();
+    else
+         return;
+
+    KImageGray img_Hue(icMain.Row(), icMain.Col()),
+               img_Sat(icMain.Row(), icMain.Col()),
+               img_Val(icMain.Row(), icMain.Col());
+
+    double dHue = ui->spinHue->value();//text().toDouble();
+    double dSat = ui->spinSaturation->value();
+
+    double min,max,dif;
+    double val;
+    double C,m,X;
+    double R,G,B;
+    double Hu,Sa;
+
+    for(int i = 0;i<(int)icMain.Row();i++){
+        for(int j = 0;j<(int)icMain.Col();j++) // 행,열의 갯수까지 반복한다.
+        {            
+            max = std::max(std::max(icMain[i][j].r,icMain[i][j].g),icMain[i][j].b);
+            min = std::min(std::min(icMain[i][j].r,icMain[i][j].g),icMain[i][j].b);
+            dif = max - min;
+
+            val = max/255.0;
+            img_Val[i][j] = val * 255;
+
+            Sa = dif/max;
+        //H값 구하기
+            if(max == icMain[i][j].r)
+                Hu = 60.0*(icMain[i][j].g - icMain[i][j].b)/dif;
+            else if(max == icMain[i][j].g)
+                Hu = (60.0*(icMain[i][j].b - icMain[i][j].r)/dif)+120;
+            else if(max == icMain[i][j].b)
+                Hu = (60.0*(icMain[i][j].r - icMain[i][j].g)/dif)+240;
+
+            if(Hu == 360.0)
+                Hu = 0.0;
+
+            img_Hue[i][j] = (Hu/360.0)*255.0;
+            img_Sat[i][j] = Sa * 255.0;
+
+            Hu = dHue;
+            Sa = dSat;
+
+            C = val * Sa;
+            m = val - C;
+            X = C*(1-abs(fmod(Hu/60.0,2.0)-1));
+
+
+            if(Hu>=0 && Hu<60)
+            {
+                R = C;
+                G = X;
+                B = 0;
+            }
+
+            else if(Hu>=60 && Hu<120)
+            {
+                R = X;
+                G = C;
+                B = 0;
+            }
+
+            else if(Hu>=120 && Hu<180)
+            {
+                R = 0;
+                G = C;
+                B = X;
+            }
+
+            else if(Hu>=180 && Hu<240)
+            {
+                R = 0;
+                G = X;
+                B = C;
+            }
+
+            else if(Hu>=240 && Hu<300)
+            {
+                R = X;
+                G = 0;
+                B = C;
+            }
+
+            else if(Hu>=300 && Hu<360)
+            {
+                R = C;
+                G = 0;
+                B = X;
+            }
+
+            icMain[i][j].r = (R+m)*255.0;
+            icMain[i][j].g = (G+m)*255.0;
+            icMain[i][j].b = (B+m)*255.0;
+
+        }
+    }
+
+
+
+    ImageForm* q_pHue = new ImageForm(img_Hue, "Hue", this);
+    _plpImageForm->Add(q_pHue);
+    q_pHue->show();
+
+    ImageForm* q_pSat = new ImageForm(img_Sat, "Sat", this);
+    _plpImageForm->Add(q_pSat);
+    q_pSat->show();
+
+    ImageForm* q_pVal = new ImageForm(img_Val, "Val", this);
+    _plpImageForm->Add(q_pVal);
+    q_pVal->show();
+
+    ImageForm* q_pForm = new ImageForm(icMain, "Sepia Tone", this);
+
+    _plpImageForm->Add(q_pForm);
+    q_pForm->show();
+
+    UpdateUI();
+}
